@@ -12,7 +12,7 @@ export const c = {
 };
 
 export const NAME = "MAK VIBE CODING";
-export const VERSION = "1.0.0";
+export const VERSION = "1.1.0";
 
 export function banner(model: string, cwd: string, mode: string): string {
   const art = [
@@ -40,10 +40,14 @@ ${c.bold("Comandi")}
   /effort [liv]    mostra o cambia l'impegno (low, medium, high, xhigh, max)
   /yolo            attiva/disattiva l'approvazione automatica degli strumenti
   /cost            token usati e costo stimato della sessione
+  /compact         riassume la conversazione per liberare contesto
+  /resume          riprende l'ultima conversazione di questa cartella
   /init            analizza il progetto e crea MAK.md
   /exit            esci
 
 ${c.bold("Suggerimenti")}
   Le istruzioni di progetto vanno in MAK.md: vengono lette a ogni avvio.
+  Comandi tuoi: crea .mak/commands/nome.md e usali con /nome (\$ARGUMENTS = il testo dopo il comando).
+  Permessi fissi: .mak/settings.json, es. {"allow": ["edit_file", "bash:npm test"]}
   Uso non interattivo:  mak -p "spiega questo repository"
 `;

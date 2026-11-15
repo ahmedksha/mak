@@ -18,6 +18,10 @@ export interface ToolDef {
   /** Read-only tools run without asking the user. */
   readOnly: boolean;
   summarize(input: any): string;
+  /** Optional preview of the change, shown before the user approves it. */
+  detail?(input: any): string;
+  /** Show the whole output instead of the first few lines. */
+  fullOutput?: boolean;
   run(input: any, ctx: ToolContext): Promise<string>;
 }
 
@@ -95,6 +99,13 @@ function globToRegExp(glob: string): RegExp {
 
 const str = { type: "string" } as const;
 
+function diffLines(sign: "+" | "-", text: string, max = 12): string {
+  const lines = text.split("\n");
+  const shown = lines.slice(0, max).map((l) => `    ${sign} ${l.slice(0, 160)}`);
+  if (lines.length > max) shown.push(`    ${sign} … +${lines.length - max} righe`);
+  return shown.join("\n");
+}
+
 const readFile: ToolDef = {
   readOnly: true,
   schema: z.object({
@@ -147,6 +158,7 @@ const writeFile: ToolDef = {
     },
   },
   summarize: (i) => `${i.path} (${i.content.split("\n").length} righe)`,
+  detail: (i) => diffLines("+", i.content),
   async run(i, ctx) {
     const file = await resolveInRoot(ctx.root, i.path);
     await fs.mkdir(path.dirname(file), { recursive: true });
@@ -180,6 +192,7 @@ const editFile: ToolDef = {
     },
   },
   summarize: (i) => i.path,
+  detail: (i) => `${diffLines("-", i.old_string)}\n${diffLines("+", i.new_string)}`,
   async run(i, ctx) {
     const file = await resolveInRoot(ctx.root, i.path);
     const text = await fs.readFile(file, "utf8");
@@ -328,5 +341,43 @@ const grep: ToolDef = {
   },
 };
 
-export const TOOLS: ToolDef[] = [readFile, writeFile, editFile, bash, glob, grep];
+const todoWrite: ToolDef = {
+  readOnly: true,
+  fullOutput: true,
+  schema: z.object({
+    todos: z.array(
+      z.object({ content: z.string().min(1), status: z.enum(["pending", "in_progress", "completed"]) }),
+    ),
+  }),
+  spec: {
+    name: "todo_write",
+    description:
+      "Show the user a task list for multi-step work and keep it current. Send the full list every time; mark one item in_progress while you work on it and completed as soon as it is done. Skip it for simple tasks.",
+    eager_input_streaming: true,
+    input_schema: {
+      type: "object",
+      properties: {
+        todos: {
+          type: "array",
+          items: {
+            type: "object",
+            properties: {
+              content: { ...str, description: "What needs doing" },
+              status: { type: "string", enum: ["pending", "in_progress", "completed"] },
+            },
+            required: ["content", "status"],
+          },
+        },
+      },
+      required: ["todos"],
+    },
+  },
+  summarize: (i) => `${i.todos.filter((t: any) => t.status === "completed").length}/${i.todos.length} completate`,
+  async run(i) {
+    const mark = { pending: "☐", in_progress: "◐", completed: "☑" } as const;
+    return i.todos.map((t: { content: string; status: keyof typeof mark }) => `${mark[t.status]} ${t.content}`).join("\n") || "[empty list]";
+  },
+};
+
+export const TOOLS: ToolDef[] = [readFile, writeFile, editFile, bash, glob, grep, todoWrite];
 export const TOOL_BY_NAME = new Map(TOOLS.map((t) => [t.spec.name, t]));
