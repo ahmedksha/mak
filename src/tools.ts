@@ -249,7 +249,7 @@ const bash: ToolDef = {
       const done = (tail: string) => {
         clearTimeout(timer);
         ctx.signal.removeEventListener("abort", onAbort);
-        resolve(truncate(out) + note + tail);
+        resolve(truncate(out).trimEnd() + note + tail);
       };
       child.on("error", (e) => done(`\n[failed to start: ${e.message}]`));
       child.on("close", (code) => done(`\n[exit code: ${code ?? "killed"}]`));
