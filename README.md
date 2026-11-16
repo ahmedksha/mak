@@ -19,6 +19,7 @@ export ANTHROPIC_API_KEY="la-tua-chiave"
 
 ```bash
 mak                              # sessione interattiva nella cartella corrente
+mak --ui                         # interfaccia grafica nel browser
 mak -p "spiega questo progetto"  # una richiesta ed esce
 mak --yolo                       # approva da solo modifiche e comandi
 mak -c                           # riprende l'ultima conversazione della cartella
@@ -34,6 +35,18 @@ Ctrl+C interrompe la risposta in corso; a riposo chiude il programma.
 
 Scrivi le regole del tuo progetto in `MAK.md` nella cartella principale: vengono
 caricate a ogni avvio. `/init` lo crea analizzando il codice.
+
+## Interfaccia grafica
+
+`mak --ui` avvia la stessa sessione in una pagina del browser con design "glass":
+pannelli traslucidi, tema chiaro o scuro secondo il sistema, adatta anche al telefono.
+Nella pagina trovi la conversazione, le anteprime delle modifiche con i pulsanti
+Consenti / Consenti sempre / Nega, la lista delle attività, modello, impegno e costo.
+
+Il server ascolta solo su questo computer (`127.0.0.1`) e ogni richiesta deve portare
+il codice casuale contenuto nel link stampato all'avvio: chi ha quel link può far
+eseguire comandi all'agente, quindi non condividerlo. Opzioni: `--port <numero>`
+(default 4625) e `--no-open` per non aprire il browser da solo.
 
 ## Comandi personalizzati
 

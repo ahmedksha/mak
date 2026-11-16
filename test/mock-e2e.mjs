@@ -161,6 +161,79 @@ server.listen(0, "127.0.0.1", async () => {
     assert.match(custom.messages[0].content, /RIASSUNTO/);
     assert.equal(custom.messages.length, 2, "history was not replaced by the summary");
 
+    // 5. Browser UI: token-protected local server, live events, approval from the page.
+    requests.length = 0;
+    fs.rmSync(path.join(work, "hello.txt"));
+    fs.rmSync(path.join(work, ".mak"), { recursive: true });
+    const ui = spawn(process.execPath, [cli, "--ui", "--port", "0", "--no-open", "--no-web"], {
+      cwd: work,
+      env: { ...process.env, HOME: home, ANTHROPIC_API_KEY: "test", ANTHROPIC_BASE_URL: `http://127.0.0.1:${server.address().port}` },
+    });
+    try {
+      const link = await new Promise((resolve, reject) => {
+        let out = "";
+        ui.stdout.on("data", (d) => {
+          out += d;
+          const m = out.match(/http:\/\/127\.0\.0\.1:\d+\/\?t=[0-9a-f]+/);
+          if (m) resolve(new URL(m[0]));
+        });
+        ui.on("close", () => reject(new Error("UI server exited: " + out)));
+      });
+      const t = link.searchParams.get("t");
+      const api = (p, body, token = t) =>
+        fetch(link.origin + p, { method: "POST", headers: { "content-type": "application/json", "x-mak-token": token }, body: JSON.stringify(body) });
+
+      assert.equal((await fetch(link.origin + "/")).status, 403, "page served without the token");
+      assert.equal((await fetch(link.origin + "/?t=" + "0".repeat(32))).status, 403);
+      assert.equal((await api("/api/input", { text: "ciao" }, "wrong")).status, 403, "API accepted a bad token");
+      const page = await fetch(link);
+      assert.equal(page.status, 200);
+      assert.match(page.headers.get("content-security-policy"), /script-src 'nonce-/);
+      assert.match(await page.text(), /MAK VIBE CODING/);
+
+      const events = [];
+      const stream = await fetch(link.origin + "/events?t=" + t);
+      (async () => {
+        let buffer = "";
+        for await (const chunk of stream.body) {
+          buffer += Buffer.from(chunk).toString();
+          let cut;
+          while ((cut = buffer.indexOf("\n\n")) !== -1) {
+            events.push(JSON.parse(buffer.slice(6, cut)));
+            buffer = buffer.slice(cut + 2);
+          }
+        }
+      })().catch(() => {});
+      const seen = async (test) => {
+        for (let i = 0; i < 200; i++) {
+          const hit = events.findLast(test);
+          if (hit) return hit;
+          await new Promise((r) => setTimeout(r, 25));
+        }
+        throw new Error("event not received; got: " + events.map((e) => e.type).join(","));
+      };
+
+      assert.equal((await api("/api/input", { text: "crea hello.txt" })).status, 202);
+      assert.equal((await api("/api/input", { text: "altra richiesta" })).status, 409, "second turn accepted while busy");
+      assert.equal((await api("/api/input", { text: "/effort low", silent: true })).status, 200);
+      const ask1 = await seen((e) => e.type === "approval" && e.id === "tu_1");
+      assert.ok(events.find((e) => e.type === "tool_start" && e.id === "tu_1").detail.includes("+ ciao"));
+      assert.equal((await api("/api/approve", { id: ask1.id, answer: "yes" })).status, 200);
+      const ask2 = await seen((e) => e.type === "approval" && e.id === "tu_2");
+      assert.equal((await api("/api/approve", { id: ask2.id, answer: "no" })).status, 200);
+      const ask3 = await seen((e) => e.type === "approval" && e.id === "tu_3");
+      assert.equal((await api("/api/approve", { id: ask3.id, answer: "yes" })).status, 200);
+      await seen((e) => e.type === "text" && e.delta === "Fatto tutto.");
+      const idle = await seen((e) => e.type === "state" && e.busy === false && events.some((x) => x.type === "text"));
+      assert.equal(idle.effort, "low");
+      assert.ok(fs.existsSync(path.join(work, "hello.txt")), "approved write did not run from the UI");
+      assert.equal(events.find((e) => e.type === "tool_end" && e.id === "tu_2").status, "denied");
+      assert.equal(events.find((e) => e.type === "tool_end" && e.id === "tu_3").status, "error");
+      assert.ok(!fs.existsSync(path.join(work, "..", "escape.txt")));
+    } finally {
+      ui.kill();
+    }
+
     console.log("mock e2e: OK");
   } catch (err) {
     console.error(err);

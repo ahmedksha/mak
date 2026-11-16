@@ -1,7 +1,7 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { z } from "zod";
 import { TOOLS, type ToolDef } from "./tools.js";
-import { c } from "./ui.js";
+import type { Sink } from "./sink.js";
 
 export type Msg = Anthropic.Beta.BetaMessageParam;
 type ToolResult = Anthropic.Beta.BetaToolResultBlockParam;
@@ -37,7 +37,8 @@ export interface AgentOptions {
   /** Sub-agents don't stream their text and can't spawn further sub-agents. */
   sub?: boolean;
   /** Asked before any tool that changes files or runs commands. */
-  approve(tool: ToolDef, input: unknown): Promise<boolean>;
+  approve(tool: ToolDef, input: unknown, id: string): Promise<boolean>;
+  sink: Sink;
 }
 
 export class Agent {
@@ -99,18 +100,19 @@ export class Agent {
     try {
       return await this.loop(signal);
     } catch (err) {
+      const { sink } = this.opts;
       if (signal.aborted) {
-        console.log(c.yellow("\n⏹ Interrotto."));
+        sink.warn("⏹ Interrotto.");
       } else if (err instanceof Anthropic.AuthenticationError) {
-        console.error(c.red("\nCredenziali non valide. Imposta ANTHROPIC_API_KEY e riprova."));
+        sink.error("Credenziali non valide. Imposta ANTHROPIC_API_KEY e riprova.");
       } else if (err instanceof Anthropic.RateLimitError) {
-        console.error(c.red("\nLimite di richieste raggiunto. Riprova tra poco."));
+        sink.error("Limite di richieste raggiunto. Riprova tra poco.");
       } else if (err instanceof Anthropic.APIConnectionError) {
-        console.error(c.red(`\nErrore di connessione: ${err.message}`));
+        sink.error(`Errore di connessione: ${err.message}`);
       } else if (err instanceof Anthropic.APIError) {
-        console.error(c.red(`\nErrore API ${err.status ?? ""}: ${err.message}`));
+        sink.error(`Errore API ${err.status ?? ""}: ${err.message}`);
       } else {
-        console.error(c.red(`\nErrore: ${err instanceof Error ? err.message : String(err)}`));
+        sink.error(`Errore: ${err instanceof Error ? err.message : String(err)}`);
       }
       return null;
     } finally {
@@ -118,12 +120,10 @@ export class Agent {
     }
   }
 
-  private get pad(): string {
-    return this.opts.sub ? "    " : "";
-  }
-
   private async loop(signal: AbortSignal): Promise<string | null> {
     let jsonRetries = 0;
+    const { sink } = this.opts;
+    const sub = !!this.opts.sub;
     const clientTools: Anthropic.Beta.BetaToolUnion[] = [...this.tools.values()].map((t) => t.spec);
     const tools = this.opts.web ? [...clientTools, ...WEB_TOOLS] : clientTools;
     for (;;) {
@@ -144,27 +144,17 @@ export class Agent {
         { signal },
       );
 
-      let mode: "none" | "thinking" | "text" = "none";
       if (!this.quiet) {
-        stream.on("thinking", (delta) => {
-          if (mode !== "thinking") process.stdout.write(c.dim("\n✻ "));
-          mode = "thinking";
-          process.stdout.write(c.dim(delta));
-        });
-        stream.on("text", (delta) => {
-          if (mode !== "text") process.stdout.write("\n");
-          mode = "text";
-          process.stdout.write(delta);
-        });
+        stream.on("thinking", (delta) => sink.thinking(delta));
+        stream.on("text", (delta) => sink.text(delta));
       }
       stream.on("contentBlock", (block) => {
         if (block.type !== "server_tool_use") return;
         const input = block.input as { query?: string; url?: string };
         const what = input.query ?? input.url;
         if (!what) return;
-        if (mode !== "none") process.stdout.write("\n");
-        mode = "none";
-        console.log(`\n${this.pad}${c.cyan("●")} ${c.bold(block.name)} ${c.dim(oneLine(what))}`);
+        sink.toolStart({ id: block.id, name: block.name, summary: oneLine(what), sub, server: true });
+        sink.toolEnd({ id: block.id, status: "ok", output: "", sub, server: true });
       });
 
       let message: Anthropic.Beta.BetaMessage;
@@ -177,7 +167,7 @@ export class Agent {
         if (signal.aborted || err instanceof Anthropic.APIError || jsonRetries++ >= 2) throw err;
         continue;
       }
-      if (mode !== "none") process.stdout.write("\n");
+      if (!this.quiet) sink.messageEnd();
 
       const u = message.usage;
       this.usage.input += u.input_tokens;
@@ -192,7 +182,7 @@ export class Agent {
         .trim();
 
       if (message.stop_reason === "refusal") {
-        console.log(c.yellow(`${this.pad}Il modello ha rifiutato la richiesta.`));
+        sink.warn("Il modello ha rifiutato la richiesta.");
         return null;
       }
 
@@ -202,7 +192,7 @@ export class Agent {
 
       if (message.stop_reason === "max_tokens") {
         // A tool input cut off here would parse as a valid partial object: never run it.
-        console.log(c.yellow(`${this.pad}Risposta troncata (limite di token). Chiedi di continuare.`));
+        sink.warn("Risposta troncata (limite di token). Chiedi di continuare.");
         if (calls.length === 0 && message.content.length) {
           this.messages.push({ role: "assistant", content: message.content });
         }
@@ -219,7 +209,7 @@ export class Agent {
       }
       this.messages.push({ role: "user", content: results });
       if (signal.aborted) {
-        console.log(c.yellow("\n⏹ Interrotto."));
+        sink.warn("⏹ Interrotto.");
         return null;
       }
     }
@@ -240,27 +230,37 @@ export class Agent {
     // Eager streaming skips server-side validation, so validate here.
     const parsed = tool.schema.safeParse(call.input);
     if (!parsed.success) return fail(JSON.stringify({ INVALID_JSON: JSON.stringify(call.input) }));
-    const input = parsed.data;
-    const pad = this.pad;
+    const input = parsed.data as any;
+    const { sink } = this.opts;
+    const sub = !!this.opts.sub;
+    const end = (status: "ok" | "error" | "denied", output: string) =>
+      sink.toolEnd({ id: call.id, status, output, sub, full: tool.fullOutput });
 
-    console.log(`\n${pad}${c.cyan("●")} ${c.bold(call.name)} ${c.dim(oneLine(tool.summarize(input)))}`);
+    sink.toolStart({
+      id: call.id,
+      name: call.name,
+      summary: oneLine(tool.summarize(input)),
+      detail: tool.readOnly ? undefined : tool.detail?.(input),
+      sub,
+      todos: call.name === "todo_write" ? input.todos : undefined,
+    });
 
-    if (!tool.readOnly) {
-      if (tool.detail) console.log(colorDiff(tool.detail(input), pad));
-      if (!(await this.opts.approve(tool, input))) {
-        console.log(c.yellow(`${pad}  ✗ negato`));
-        return fail("The user denied permission for this action. Ask them how to proceed.");
-      }
+    if (!tool.readOnly && !(await this.opts.approve(tool, input, call.id))) {
+      end("denied", "");
+      return fail("The user denied permission for this action. Ask them how to proceed.");
     }
-    if (signal.aborted) return fail("Interrupted by the user before this tool ran.");
+    if (signal.aborted) {
+      end("error", "Interrotto");
+      return fail("Interrupted by the user before this tool ran.");
+    }
 
     try {
       const output = await tool.run(input, { root: this.opts.root, signal });
-      console.log(c.dim(preview(output, pad, tool.fullOutput ? 40 : 6)));
+      end("ok", output);
       return { type: "tool_result", tool_use_id: call.id, content: output };
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
-      console.log(c.red(`${pad}  ✗ ${msg}`));
+      end("error", msg);
       return fail(msg);
     }
   }
@@ -303,18 +303,4 @@ function taskTool(parent: Agent): ToolDef {
 function oneLine(s: string): string {
   const flat = s.replace(/\s+/g, " ");
   return flat.length > 120 ? flat.slice(0, 117) + "..." : flat;
-}
-
-function colorDiff(detail: string, pad: string): string {
-  return detail
-    .split("\n")
-    .map((l) => pad + (l.trimStart().startsWith("-") ? c.red(l) : c.green(l)))
-    .join("\n");
-}
-
-function preview(output: string, pad: string, max: number): string {
-  const lines = output.trimEnd().split("\n");
-  const shown = lines.slice(0, max).map((l) => `${pad}  ⎿ ${l.slice(0, 160)}`);
-  if (lines.length > max) shown.push(`${pad}  ⎿ … +${lines.length - max} righe`);
-  return shown.join("\n");
 }

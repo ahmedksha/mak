@@ -12,7 +12,7 @@ export const c = {
 };
 
 export const NAME = "MAK VIBE CODING";
-export const VERSION = "1.1.0";
+export const VERSION = "1.2.0";
 
 export function banner(model: string, cwd: string, mode: string): string {
   const art = [

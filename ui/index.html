@@ -1,0 +1,503 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MAK VIBE CODING</title>
+<style>
+  :root {
+    color-scheme: dark;
+    --bg: #080a14;
+    --text: #f1f2f8;
+    --muted: #a3a7bf;
+    --glass: rgba(255, 255, 255, 0.07);
+    --glass-strong: rgba(255, 255, 255, 0.11);
+    --glass-deep: rgba(8, 10, 22, 0.45);
+    --line: rgba(255, 255, 255, 0.16);
+    --line-soft: rgba(255, 255, 255, 0.09);
+    --shine: rgba(255, 255, 255, 0.22);
+    --shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
+    --accent: #a78bfa;
+    --accent-2: #5eead4;
+    --accent-ink: #0b0d17;
+    --ok: #6ee7a8;
+    --warn: #fcd34d;
+    --bad: #fda4af;
+    --blob-1: #6d4dff;
+    --blob-2: #12b5cb;
+    --blob-3: #e2459a;
+    --blob-opacity: 0.55;
+    --radius: 22px;
+    --mono: ui-monospace, "SF Mono", "Cascadia Code", "JetBrains Mono", Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: light) {
+    :root {
+      color-scheme: light;
+      --bg: #e6e9f7;
+      --text: #14162a;
+      --muted: #555a78;
+      --glass: rgba(255, 255, 255, 0.5);
+      --glass-strong: rgba(255, 255, 255, 0.72);
+      --glass-deep: rgba(255, 255, 255, 0.6);
+      --line: rgba(255, 255, 255, 0.9);
+      --line-soft: rgba(20, 22, 42, 0.1);
+      --shine: rgba(255, 255, 255, 0.95);
+      --shadow: 0 24px 60px rgba(60, 70, 130, 0.22);
+      --accent: #6d4dff;
+      --accent-2: #0d9488;
+      --accent-ink: #ffffff;
+      --ok: #047857;
+      --warn: #a16207;
+      --bad: #be123c;
+      --blob-1: #a996ff;
+      --blob-2: #7fe3ee;
+      --blob-3: #ffa9d6;
+      --blob-opacity: 0.8;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  html, body { height: 100%; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font: 15px/1.55 system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+    overflow: hidden;
+  }
+  button, input, select, textarea { font: inherit; color: inherit; }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  /* Coloured light behind the glass */
+  .backdrop { position: fixed; inset: 0; overflow: hidden; z-index: 0; }
+  .blob {
+    position: absolute; border-radius: 50%; filter: blur(90px);
+    opacity: var(--blob-opacity); animation: drift 26s ease-in-out infinite alternate;
+  }
+  .blob.one { width: 46vw; height: 46vw; left: -10vw; top: -14vw; background: var(--blob-1); }
+  .blob.two { width: 40vw; height: 40vw; right: -8vw; top: 18vh; background: var(--blob-2); animation-duration: 32s; animation-delay: -8s; }
+  .blob.three { width: 38vw; height: 38vw; left: 28vw; bottom: -20vw; background: var(--blob-3); animation-duration: 38s; animation-delay: -15s; }
+  @keyframes drift { to { transform: translate3d(4vw, 5vh, 0) scale(1.12); } }
+  @media (prefers-reduced-motion: reduce) { .blob, .dots i { animation: none !important; } }
+
+  .glass {
+    background: var(--glass);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow), inset 0 1px 0 var(--shine);
+    -webkit-backdrop-filter: blur(26px) saturate(170%);
+    backdrop-filter: blur(26px) saturate(170%);
+  }
+
+  .app {
+    position: relative; z-index: 1;
+    height: 100dvh; display: grid; grid-template-columns: 300px minmax(0, 1fr);
+    gap: 16px; padding: 16px;
+  }
+
+  /* Sidebar */
+  .side { display: flex; flex-direction: column; gap: 18px; padding: 20px; overflow-y: auto; }
+  .brand { display: flex; align-items: center; gap: 12px; }
+  .mark {
+    width: 44px; height: 44px; border-radius: 14px; display: grid; place-items: center;
+    font-weight: 800; font-size: 20px; color: #fff; letter-spacing: -0.02em;
+    background: linear-gradient(135deg, #7c5cff, #22c5d8 55%, #f05aa6);
+    box-shadow: 0 8px 22px rgba(124, 92, 255, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.5);
+  }
+  .brand b { display: block; font-size: 17px; letter-spacing: 0.04em; line-height: 1.15; }
+  .brand span { color: var(--muted); font-size: 12px; letter-spacing: 0.22em; }
+  .field { display: grid; gap: 7px; }
+  .label { font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+  .path { font: 12.5px/1.45 var(--mono); word-break: break-all; }
+  .control {
+    width: 100%; padding: 9px 12px; border-radius: 12px;
+    background: var(--glass-deep); border: 1px solid var(--line-soft);
+  }
+  select.control { appearance: none; padding-right: 30px; background-image: linear-gradient(45deg, transparent 50%, var(--muted) 50%), linear-gradient(135deg, var(--muted) 50%, transparent 50%); background-position: calc(100% - 16px) 55%, calc(100% - 11px) 55%; background-size: 5px 5px; background-repeat: no-repeat; }
+  .switch { display: flex; gap: 12px; align-items: flex-start; cursor: pointer; }
+  .switch input { position: absolute; opacity: 0; }
+  .track {
+    flex: none; width: 42px; height: 24px; border-radius: 999px; margin-top: 2px;
+    background: color-mix(in srgb, var(--muted) 38%, transparent); border: 1px solid var(--line-soft); position: relative; transition: background 0.2s;
+  }
+  .track::after {
+    content: ""; position: absolute; top: 2px; left: 2px; width: 18px; height: 18px; border-radius: 50%;
+    background: #fff; box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3); transition: transform 0.2s;
+  }
+  .switch input:checked + .track { background: var(--accent); border-color: transparent; }
+  .switch input:checked + .track::after { transform: translateX(18px); background: var(--accent-ink); }
+  .switch input:focus-visible + .track { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .switch small, .hint { display: block; color: var(--muted); font-size: 12.5px; line-height: 1.4; }
+  .todos { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+  .todos li { display: flex; gap: 9px; align-items: flex-start; font-size: 13.5px; line-height: 1.4; }
+  .todos li.completed { color: var(--muted); text-decoration: line-through; }
+  .box { flex: none; width: 16px; height: 16px; margin-top: 2px; border-radius: 5px; border: 1.5px solid var(--muted); display: grid; place-items: center; font-size: 11px; line-height: 1; }
+  .in_progress .box { border-color: var(--accent); background: radial-gradient(circle, var(--accent) 38%, transparent 42%); }
+  .completed .box { border-color: transparent; background: var(--ok); color: var(--accent-ink); }
+  .cost { font: 12px/1.6 var(--mono); color: var(--muted); white-space: pre-line; }
+  .side .spacer { flex: 1; }
+  .row { display: flex; gap: 8px; flex-wrap: wrap; }
+  .btn {
+    padding: 8px 13px; border-radius: 12px; cursor: pointer;
+    background: var(--glass-strong); border: 1px solid var(--line-soft); font-size: 13.5px;
+    transition: transform 0.12s, background 0.2s;
+  }
+  .btn:hover { background: var(--glass); transform: translateY(-1px); }
+  .btn:disabled { opacity: 0.5; cursor: default; transform: none; }
+  .btn.primary { background: linear-gradient(135deg, var(--accent), var(--accent-2)); color: var(--accent-ink); border-color: transparent; font-weight: 650; }
+  .btn.danger { color: var(--bad); }
+
+  /* Main column */
+  .main { display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
+  .top { display: flex; align-items: center; gap: 12px; padding: 14px 20px; border-bottom: 1px solid var(--line-soft); }
+  .top h1 { margin: 0; font-size: 15px; font-weight: 650; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .status { margin-left: auto; display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: 13px; white-space: nowrap; }
+  .status i { width: 8px; height: 8px; border-radius: 50%; background: var(--ok); box-shadow: 0 0 10px var(--ok); }
+  .busy .status i { background: var(--warn); box-shadow: 0 0 10px var(--warn); }
+  .menu { display: none; }
+
+  .log { flex: 1; overflow-y: auto; padding: 24px 20px 8px; }
+  .thread { max-width: 820px; margin: 0 auto; display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; }
+  .welcome { text-align: center; padding: 9vh 0 3vh; }
+  .welcome h2 {
+    margin: 0 0 10px; font-size: clamp(30px, 5.2vw, 50px); letter-spacing: -0.02em; line-height: 1.05; font-weight: 800;
+    background: linear-gradient(100deg, var(--accent), var(--accent-2) 55%, #f472b6); -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+  .welcome p { margin: 0 auto 24px; color: var(--muted); max-width: 46ch; }
+  .chips { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+
+  .msg { white-space: pre-wrap; overflow-wrap: anywhere; }
+  .user {
+    justify-self: end; max-width: 82%; padding: 11px 16px; border-radius: 18px 18px 6px 18px;
+    background: linear-gradient(135deg, color-mix(in srgb, var(--accent) 34%, transparent), color-mix(in srgb, var(--accent-2) 22%, transparent));
+    border: 1px solid var(--line); box-shadow: inset 0 1px 0 var(--shine);
+  }
+  .answer { padding: 2px 4px; }
+  .answer code, .card code { font: 13px var(--mono); background: var(--glass-deep); border: 1px solid var(--line-soft); padding: 1px 6px; border-radius: 7px; }
+  pre.code { margin: 8px 0; padding: 13px 15px; border-radius: 14px; background: var(--glass-deep); border: 1px solid var(--line-soft); overflow-x: auto; font: 13px/1.55 var(--mono); white-space: pre; }
+  pre.code code { background: none; border: 0; padding: 0; }
+  .think { color: var(--muted); font-size: 13.5px; }
+  .think summary { cursor: pointer; width: fit-content; }
+  .think div { white-space: pre-wrap; padding: 6px 0 0 14px; border-left: 2px solid var(--line-soft); margin-top: 6px; font-style: italic; }
+
+  .card { padding: 12px 15px; border-radius: 16px; background: var(--glass); border: 1px solid var(--line-soft); box-shadow: inset 0 1px 0 var(--shine); display: grid; gap: 9px; }
+  .card.sub { margin-left: 26px; }
+  .head { display: flex; align-items: baseline; gap: 10px; min-width: 0; }
+  .dot { flex: none; width: 9px; height: 9px; border-radius: 50%; background: var(--accent-2); box-shadow: 0 0 10px var(--accent-2); align-self: center; }
+  .card.running .dot { animation: pulse 1.1s ease-in-out infinite; }
+  .card.error .dot, .card.denied .dot { background: var(--bad); box-shadow: 0 0 10px var(--bad); }
+  @keyframes pulse { 50% { opacity: 0.25; transform: scale(0.7); } }
+  .head b { flex: none; font-weight: 650; }
+  .head .what { font: 13px var(--mono); color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .head .tag { margin-left: auto; flex: none; font-size: 12px; color: var(--muted); }
+  .card.error .tag, .card.denied .tag { color: var(--bad); }
+  .diff { margin: 0; border-radius: 12px; overflow-x: auto; background: var(--glass-deep); border: 1px solid var(--line-soft); font: 12.5px/1.6 var(--mono); padding: 8px 0; }
+  .diff span { display: block; padding: 0 12px; white-space: pre; }
+  .diff .del { color: var(--bad); background: color-mix(in srgb, var(--bad) 12%, transparent); }
+  .diff .add { color: var(--ok); background: color-mix(in srgb, var(--ok) 12%, transparent); }
+  .out summary { cursor: pointer; color: var(--muted); font-size: 12.5px; width: fit-content; }
+  .out pre { margin: 8px 0 0; max-height: 280px; overflow: auto; font: 12.5px/1.55 var(--mono); color: var(--muted); white-space: pre-wrap; overflow-wrap: anywhere; }
+  .ask { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; padding-top: 2px; }
+  .ask span { color: var(--warn); font-size: 13.5px; margin-right: 4px; }
+
+  .notice { justify-self: center; font-size: 13px; color: var(--muted); padding: 5px 13px; border-radius: 999px; background: var(--glass); border: 1px solid var(--line-soft); }
+  .notice.warn { color: var(--warn); }
+  .notice.error { color: var(--bad); }
+  .notice.say { justify-self: stretch; border-radius: 14px; white-space: pre-wrap; font: 12.5px/1.6 var(--mono); padding: 12px 15px; }
+  .dots { display: flex; gap: 5px; padding: 6px 4px; }
+  .dots i { width: 7px; height: 7px; border-radius: 50%; background: var(--muted); animation: pulse 1.1s ease-in-out infinite; }
+  .dots i:nth-child(2) { animation-delay: 0.18s; } .dots i:nth-child(3) { animation-delay: 0.36s; }
+
+  /* Composer */
+  .composer-wrap { padding: 10px 20px 18px; }
+  .composer { max-width: 820px; margin: 0 auto; display: flex; align-items: flex-end; gap: 10px; padding: 9px 9px 9px 18px; border-radius: 20px; background: var(--glass-strong); }
+  .composer textarea { flex: 1; resize: none; border: 0; background: none; outline: none; padding: 8px 0; max-height: 180px; line-height: 1.5; }
+  .composer textarea::placeholder { color: var(--muted); }
+  .send { width: 42px; height: 42px; border-radius: 14px; border: 0; cursor: pointer; display: grid; place-items: center; background: linear-gradient(135deg, var(--accent), var(--accent-2)); color: var(--accent-ink); font-size: 18px; font-weight: 700; flex: none; }
+  .busy .send { background: var(--glass-deep); color: var(--bad); border: 1px solid var(--line-soft); }
+  .foot { max-width: 820px; margin: 7px auto 0; text-align: center; color: var(--muted); font-size: 12px; }
+  kbd { font: 11px var(--mono); padding: 1px 5px; border-radius: 5px; border: 1px solid var(--line-soft); background: var(--glass); }
+
+  @media (max-width: 860px) {
+    .app { grid-template-columns: minmax(0, 1fr); padding: 10px; gap: 10px; }
+    .menu { display: inline-grid; }
+    .side { position: fixed; z-index: 5; inset: 10px 10px 10px 10px; display: none; }
+    .side.open { display: flex; background: color-mix(in srgb, var(--bg) 72%, transparent); }
+    .top { padding: 12px 14px; }
+    .log { padding: 18px 14px 6px; }
+    .composer-wrap { padding: 8px 12px 14px; }
+    .user { max-width: 92%; }
+    .foot { display: none; }
+  }
+</style>
+</head>
+<body>
+<div class="backdrop" aria-hidden="true"><div class="blob one"></div><div class="blob two"></div><div class="blob three"></div></div>
+
+<div class="app" id="app">
+  <aside class="side glass" id="side" aria-label="Impostazioni">
+    <div class="brand">
+      <div class="mark" aria-hidden="true">M</div>
+      <div><b>MAK</b><span>VIBE CODING</span></div>
+      <button class="btn menu" id="close" style="margin-left:auto" aria-label="Chiudi impostazioni">✕</button>
+    </div>
+    <div class="field"><span class="label">Progetto</span><span class="path" id="root">…</span></div>
+    <label class="field"><span class="label">Modello</span>
+      <input class="control" id="model" list="models" spellcheck="false" autocomplete="off">
+      <datalist id="models"><option value="claude-opus-5-5"><option value="claude-sonnet-5-5"><option value="claude-haiku-5-5"><option value="claude-fable-5-2"></datalist>
+    </label>
+    <label class="field"><span class="label">Impegno</span>
+      <select class="control" id="effort">
+        <option value="low">Basso · veloce</option><option value="medium">Medio</option><option value="high">Alto</option>
+        <option value="xhigh">Molto alto</option><option value="max">Massimo · lento</option>
+      </select>
+    </label>
+    <label class="switch">
+      <input type="checkbox" id="yolo"><span class="track"></span>
+      <span>Approva tutto da solo<small>Modifiche e comandi partono senza chiederti conferma.</small></span>
+    </label>
+    <div class="field"><span class="label">Attività</span>
+      <ul class="todos" id="todos"></ul><span class="hint" id="notodos">Qui vedrai i passi del lavoro in corso.</span>
+    </div>
+    <div class="spacer"></div>
+    <div class="field"><span class="label">Sessione</span><span class="cost" id="cost"></span></div>
+    <div class="row">
+      <button class="btn" id="new">Nuova conversazione</button>
+      <button class="btn" id="compact" title="Sostituisce la cronologia con un riassunto">Riassumi</button>
+    </div>
+  </aside>
+
+  <main class="main glass">
+    <header class="top">
+      <button class="btn menu" id="open" aria-label="Apri impostazioni">☰</button>
+      <h1 id="title">MAK VIBE CODING</h1>
+      <div class="status" role="status"><i></i><span id="status">Pronto</span></div>
+    </header>
+    <div class="log" id="log">
+      <div class="thread" id="thread" aria-live="polite"></div>
+    </div>
+    <div class="composer-wrap">
+      <form class="composer glass" id="form">
+        <textarea id="input" rows="1" placeholder="Chiedi qualcosa sul tuo codice…" aria-label="Messaggio"></textarea>
+        <button class="send" id="send" aria-label="Invia">↑</button>
+      </form>
+      <div class="foot"><kbd>Invio</kbd> invia · <kbd>Maiusc</kbd>+<kbd>Invio</kbd> va a capo · <kbd>/help</kbd> mostra i comandi</div>
+    </div>
+  </main>
+</div>
+
+<script nonce="__NONCE__">
+(() => {
+  const TOKEN = "__TOKEN__";
+  const $ = (id) => document.getElementById(id);
+  const el = (tag, cls, text) => {
+    const node = document.createElement(tag);
+    if (cls) node.className = cls;
+    if (text !== undefined) node.textContent = text;
+    return node;
+  };
+  const LABELS = {
+    read_file: "Lettura", write_file: "Nuovo file", edit_file: "Modifica", bash: "Comando", glob: "Ricerca file",
+    grep: "Ricerca nel codice", todo_write: "Attività", task: "Sotto-agente", web_search: "Ricerca web", web_fetch: "Pagina web",
+  };
+  const thread = $("thread"), log = $("log"), input = $("input"), app = $("app");
+  const cards = new Map();
+  let busy = false, answer = null, think = null, waiting = null;
+
+  const post = (path, body) =>
+    fetch(path, { method: "POST", headers: { "content-type": "application/json", "x-mak-token": TOKEN }, body: JSON.stringify(body || {}) });
+  const send = async (text, silent) => {
+    const res = await post("/api/input", { text, silent: !!silent });
+    if (res.status === 409) note("warn", "Aspetta la fine della risposta, oppure fermala.");
+    return res.ok;
+  };
+
+  const nearBottom = () => log.scrollHeight - log.scrollTop - log.clientHeight < 140;
+  const add = (node) => {
+    const stick = nearBottom();
+    if (waiting) thread.insertBefore(node, waiting); else thread.append(node);
+    if (stick) log.scrollTop = log.scrollHeight;
+    return node;
+  };
+  const follow = (fn) => { const stick = nearBottom(); fn(); if (stick) log.scrollTop = log.scrollHeight; };
+  const note = (level, text) => add(el("div", "notice " + level, text));
+
+  // Minimal Markdown: fenced code, inline code and bold. Everything is escaped first.
+  const esc = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  const inline = (s) => esc(s).replace(/`([^`\n]+)`/g, "<code>$1</code>").replace(/\*\*([^*\n]+)\*\*/g, "<b>$1</b>");
+  const markdown = (src) => {
+    const parts = src.split("```");
+    return parts.map((part, i) => {
+      // Blank lines next to a code block would double its margins.
+      if (i % 2 === 0) return inline(part.replace(i ? /^\n+/ : /^$/, "").replace(i < parts.length - 1 ? /\n+$/ : /^$/, ""));
+      const body = part.replace(/^[^\n]*\n?/, "");
+      return '<pre class="code"><code>' + esc(body.replace(/\n$/, "")) + "</code></pre>";
+    }).join("");
+  };
+
+  function welcome() {
+    const box = el("div", "welcome");
+    box.append(el("h2", "", "MAK VIBE CODING"), el("p", "", "Descrivi cosa vuoi ottenere: leggo il codice, propongo le modifiche e le eseguo solo con il tuo via libera."));
+    const chips = el("div", "chips");
+    for (const text of ["Spiegami questo progetto", "Trova e correggi un bug", "Scrivi i test che mancano"]) {
+      const chip = el("button", "btn", text);
+      chip.type = "button";
+      chip.addEventListener("click", () => { input.value = text; grow(); input.focus(); });
+      chips.append(chip);
+    }
+    box.append(chips);
+    thread.append(box);
+  }
+  const clearWelcome = () => thread.querySelector(".welcome")?.remove();
+
+  function renderTodos(todos) {
+    const list = $("todos");
+    list.replaceChildren();
+    for (const t of todos) {
+      const li = el("li", t.status);
+      li.append(el("span", "box", t.status === "completed" ? "✓" : ""), el("span", "", t.content));
+      list.append(li);
+    }
+    $("notodos").hidden = todos.length > 0;
+  }
+
+  function toolStart(e) {
+    answer = think = null;
+    const card = el("div", "card running" + (e.sub ? " sub" : ""));
+    const head = el("div", "head");
+    const what = el("span", "what", e.summary);
+    what.title = e.summary;
+    head.append(el("span", "dot"), el("b", "", LABELS[e.name] || e.name), what, el("span", "tag", "in corso"));
+    card.append(head);
+    if (e.detail) {
+      const diff = el("pre", "diff");
+      for (const line of e.detail.split("\n")) {
+        const text = line.replace(/^ {4}/, "");
+        diff.append(el("span", text.startsWith("-") ? "del" : "add", text));
+      }
+      card.append(diff);
+    }
+    if (e.todos) {
+      renderTodos(e.todos);
+      const list = el("ul", "todos");
+      for (const t of e.todos) {
+        const li = el("li", t.status);
+        li.append(el("span", "box", t.status === "completed" ? "✓" : ""), el("span", "", t.content));
+        list.append(li);
+      }
+      card.append(list);
+    }
+    cards.set(e.id, card);
+    add(card);
+  }
+
+  function toolEnd(e) {
+    const card = cards.get(e.id);
+    if (!card) return;
+    follow(() => {
+      card.classList.remove("running");
+      card.querySelector(".ask")?.remove();
+      const tag = card.querySelector(".tag");
+      if (e.status === "denied") { card.classList.add("denied"); tag.textContent = "negato"; return; }
+      if (e.status === "error") card.classList.add("error");
+      tag.textContent = e.status === "error" ? "errore" : "fatto";
+      // A change already shows its diff; only failures need the raw result too.
+      if (e.server || card.querySelector(".todos") || !e.output.trim()) return;
+      if (card.querySelector(".diff") && e.status === "ok") return;
+      const lines = e.output.trimEnd().split("\n");
+      const out = el("details", "out");
+      out.open = e.status === "error" || lines.length <= 4;
+      out.append(el("summary", "", lines.length === 1 ? "Risultato" : "Risultato · " + lines.length + " righe"), el("pre", "", e.output.trimEnd()));
+      card.append(out);
+    });
+  }
+
+  function approval(e) {
+    const card = cards.get(e.id);
+    if (!card || card.querySelector(".ask")) return;
+    const bar = el("div", "ask");
+    bar.append(el("span", "", "Posso procedere?"));
+    for (const [value, text, cls] of [["yes", "Consenti", "btn primary"], ["always", "Consenti sempre", "btn"], ["no", "Nega", "btn danger"]]) {
+      const b = el("button", cls, text);
+      b.type = "button";
+      b.addEventListener("click", () => { bar.querySelectorAll("button").forEach((x) => (x.disabled = true)); post("/api/approve", { id: e.id, answer: value }); });
+      bar.append(b);
+    }
+    follow(() => { card.querySelector(".tag").textContent = "in attesa"; card.append(bar); });
+    bar.querySelector("button").focus({ preventScroll: true });
+  }
+
+  function setBusy(value) {
+    busy = value;
+    app.classList.toggle("busy", busy);
+    $("status").textContent = busy ? "Al lavoro…" : "Pronto";
+    $("send").textContent = busy ? "■" : "↑";
+    $("send").setAttribute("aria-label", busy ? "Ferma" : "Invia");
+    if (busy && !waiting) { waiting = el("div", "dots"); waiting.append(el("i"), el("i"), el("i")); thread.append(waiting); log.scrollTop = log.scrollHeight; }
+    if (!busy && waiting) { waiting.remove(); waiting = null; }
+  }
+
+  const handlers = {
+    reset() { thread.replaceChildren(); cards.clear(); answer = think = waiting = null; renderTodos([]); welcome(); },
+    user(e) { clearWelcome(); answer = think = null; add(el("div", "msg user", e.text)); log.scrollTop = log.scrollHeight; },
+    thinking(e) {
+      if (!think) {
+        const box = el("details", "think");
+        box.append(el("summary", "", "Ragionamento"), (think = el("div", "")));
+        add(box); answer = null;
+      }
+      follow(() => (think.textContent += e.delta));
+    },
+    text(e) {
+      clearWelcome();
+      if (!answer) { answer = add(el("div", "msg answer")); answer.raw = ""; think = null; }
+      follow(() => { answer.raw += e.delta; answer.innerHTML = markdown(answer.raw); });
+    },
+    message_end() { answer = think = null; },
+    tool_start(e) { clearWelcome(); toolStart(e); },
+    tool_end: toolEnd,
+    approval,
+    approval_done() {},
+    notice(e) { clearWelcome(); answer = think = null; note(e.level, e.text.trim()); },
+    state(e) {
+      $("root").textContent = e.root;
+      $("title").textContent = e.root.split(/[\\/]/).filter(Boolean).pop() || e.name;
+      if (document.activeElement !== $("model")) $("model").value = e.model;
+      $("effort").value = e.effort;
+      $("yolo").checked = e.yolo;
+      $("cost").textContent = e.cost.replace(/ · /g, "\n").replace("Token: ", "");
+      setBusy(e.busy);
+    },
+  };
+
+  const source = new EventSource("/events?t=" + TOKEN);
+  source.onmessage = (m) => { const e = JSON.parse(m.data); handlers[e.type]?.(e); };
+  source.onerror = () => { $("status").textContent = "Disconnesso"; };
+
+  const grow = () => { input.style.height = "auto"; input.style.height = Math.min(input.scrollHeight, 180) + "px"; };
+  input.addEventListener("input", grow);
+  input.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" && !e.shiftKey && !e.isComposing) { e.preventDefault(); $("form").requestSubmit(); }
+  });
+  $("form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    if (busy) return void post("/api/interrupt");
+    const text = input.value.trim();
+    if (!text) return;
+    input.value = ""; grow();
+    if (!(await send(text))) { input.value = text; grow(); }
+  });
+  $("model").addEventListener("change", (e) => e.target.value.trim() && send("/model " + e.target.value.trim(), true));
+  $("effort").addEventListener("change", (e) => send("/effort " + e.target.value, true));
+  $("yolo").addEventListener("change", (e) => send("/yolo " + (e.target.checked ? "on" : "off"), true));
+  $("new").addEventListener("click", () => send("/clear", true));
+  $("compact").addEventListener("click", () => send("/compact", true));
+  $("open").addEventListener("click", () => $("side").classList.add("open"));
+  $("close").addEventListener("click", () => $("side").classList.remove("open"));
+  welcome();
+  input.focus();
+})();
+</script>
+</body>
+</html>
