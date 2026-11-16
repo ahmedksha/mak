@@ -5,19 +5,21 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>MAK VIBE CODING</title>
 <style>
-  /* Layout: a clear glass shell over one slow lava lamp. One muted ember accent, hairlines instead of fills. */
+  /* Layout: one tall glass vessel in the middle of a lava lamp. The lamp is the status light:
+     calm when idle, hotter while the agent works, almost still while it waits for an answer. */
   :root {
     color-scheme: dark;
     --bg: #0c0c0e;
     --text: #ececee;
     --muted: #a9a9b2;
     --glass: rgba(255, 255, 255, 0.035);
-    --glass-strong: rgba(255, 255, 255, 0.07);
+    --glass-strong: rgba(255, 255, 255, 0.075);
     --glass-deep: rgba(0, 0, 0, 0.28);
+    --sheet: rgba(22, 22, 26, 0.82);
     --line: rgba(255, 255, 255, 0.13);
     --line-soft: rgba(255, 255, 255, 0.08);
     --shine: rgba(255, 255, 255, 0.07);
-    --shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+    --shadow: 0 24px 60px rgba(0, 0, 0, 0.32);
     --accent: #e0a084;
     --accent-ink: #17100c;
     --ok: #9ad1b0;
@@ -25,8 +27,7 @@
     --bad: #e3a0a0;
     --lava-hot: 214 132 100;
     --lava-cool: 150 150 162;
-    --lava-opacity: 0.38;
-    --radius: 20px;
+    --lava-opacity: 0.4;
     --mono: ui-monospace, "SF Mono", "Cascadia Code", "JetBrains Mono", Menlo, Consolas, monospace;
   }
   @media (prefers-color-scheme: light) {
@@ -36,12 +37,13 @@
       --text: #1b1a19;
       --muted: #5c5955;
       --glass: rgba(255, 255, 255, 0.3);
-      --glass-strong: rgba(255, 255, 255, 0.55);
+      --glass-strong: rgba(255, 255, 255, 0.6);
       --glass-deep: rgba(255, 255, 255, 0.5);
+      --sheet: rgba(250, 249, 247, 0.9);
       --line: rgba(255, 255, 255, 0.85);
       --line-soft: rgba(27, 26, 25, 0.11);
       --shine: rgba(255, 255, 255, 0.9);
-      --shadow: 0 20px 50px rgba(90, 70, 60, 0.1);
+      --shadow: 0 24px 60px rgba(90, 70, 60, 0.12);
       --accent: #a94f35;
       --accent-ink: #ffffff;
       --ok: #2f7d57;
@@ -49,7 +51,7 @@
       --bad: #a83c3c;
       --lava-hot: 232 170 145;
       --lava-cool: 196 192 188;
-      --lava-opacity: 0.42;
+      --lava-opacity: 0.45;
     }
   }
 
@@ -60,20 +62,19 @@
     margin: 0;
     background: var(--bg);
     color: var(--text);
-    font: 15px/1.55 system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+    font: 16px/1.6 system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
     overflow: hidden;
   }
-  button, input, select, textarea { font: inherit; color: inherit; }
+  button, input, textarea { font: inherit; color: inherit; }
+  button { cursor: pointer; }
   :focus-visible { outline: 1.5px solid var(--accent); outline-offset: 2px; }
 
-  /* The lamp: drawn small on a canvas and scaled up, so the wax edges stay soft. */
   .backdrop { position: fixed; inset: 0; overflow: hidden; z-index: 0; }
-  .backdrop canvas { width: 100%; height: 100%; display: block; opacity: var(--lava-opacity); filter: blur(3px); }
+  .backdrop canvas { width: 100%; height: 100%; display: block; opacity: var(--lava-opacity); filter: blur(3px); transition: opacity 1.6s ease; }
 
   .glass {
     background: var(--glass);
     border: 1px solid var(--line);
-    border-radius: var(--radius);
     box-shadow: var(--shadow), inset 0 1px 0 var(--shine);
     -webkit-backdrop-filter: blur(7px) saturate(115%);
     backdrop-filter: blur(7px) saturate(115%);
@@ -81,140 +82,136 @@
 
   .app {
     position: relative; z-index: 1;
-    height: 100dvh; display: grid; grid-template-columns: 280px minmax(0, 1fr);
-    gap: 16px; padding: 16px;
+    height: 100dvh; display: grid; grid-template-columns: minmax(0, 760px); justify-content: center;
+    padding: 16px;
   }
+  .lamp { position: relative; display: flex; flex-direction: column; min-height: 0; border-radius: 36px; overflow: hidden; }
 
-  /* Sidebar */
-  .side { display: flex; flex-direction: column; gap: 20px; padding: 22px 20px; overflow-y: auto; }
-  .brand { display: flex; align-items: center; gap: 12px; }
-  .mark {
-    width: 38px; height: 38px; border-radius: 11px; display: grid; place-items: center;
-    font-weight: 500; font-size: 17px; border: 1px solid var(--line); color: var(--accent);
-  }
-  .brand b { display: block; font-size: 14px; font-weight: 600; letter-spacing: 0.14em; line-height: 1.2; }
-  .brand span { color: var(--muted); font-size: 10.5px; letter-spacing: 0.26em; }
-  .field { display: grid; gap: 7px; }
-  .label { font-size: 10.5px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--muted); font-weight: 500; }
-  .path { font: 12.5px/1.45 var(--mono); word-break: break-all; }
-  .control {
-    width: 100%; padding: 8px 11px; border-radius: 10px;
-    background: transparent; border: 1px solid var(--line-soft); transition: border-color 0.2s;
-  }
-  .control:hover, .control:focus { border-color: var(--line); }
-  select.control { appearance: none; padding-right: 30px; background-image: linear-gradient(45deg, transparent 50%, var(--muted) 50%), linear-gradient(135deg, var(--muted) 50%, transparent 50%); background-position: calc(100% - 16px) 55%, calc(100% - 11px) 55%; background-size: 5px 5px; background-repeat: no-repeat; }
-  select.control option { background: var(--bg); color: var(--text); }
-  .switch { display: flex; gap: 12px; align-items: flex-start; cursor: pointer; }
-  .switch input { position: absolute; opacity: 0; }
-  .track {
-    flex: none; width: 36px; height: 20px; border-radius: 999px; margin-top: 3px;
-    background: transparent; border: 1px solid var(--line); position: relative; transition: background 0.2s, border-color 0.2s;
-  }
-  .track::after {
-    content: ""; position: absolute; top: 2px; left: 2px; width: 14px; height: 14px; border-radius: 50%;
-    background: var(--muted); transition: transform 0.2s, background 0.2s;
-  }
-  .switch input:checked + .track { background: var(--accent); border-color: var(--accent); }
-  .switch input:checked + .track::after { transform: translateX(16px); background: var(--accent-ink); }
-  .switch input:focus-visible + .track { outline: 1.5px solid var(--accent); outline-offset: 2px; }
-  .switch small, .hint { display: block; color: var(--muted); font-size: 12.5px; line-height: 1.4; }
-  .todos { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
-  .todos li { display: flex; gap: 9px; align-items: flex-start; font-size: 13.5px; line-height: 1.4; }
-  .todos li.completed { color: var(--muted); }
-  .box { flex: none; width: 14px; height: 14px; margin-top: 3px; border-radius: 50%; border: 1px solid var(--muted); display: grid; place-items: center; font-size: 9px; line-height: 1; }
-  .in_progress .box { border-color: var(--accent); background: radial-gradient(circle, var(--accent) 36%, transparent 42%); }
-  .completed .box { border-color: var(--muted); color: var(--muted); }
-  .cost { font: 12px/1.6 var(--mono); color: var(--muted); white-space: pre-line; }
-  .side .spacer { flex: 1; }
-  .row { display: flex; gap: 8px; flex-wrap: wrap; }
+  /* Top */
+  .top { display: flex; align-items: center; gap: 12px; padding: 18px 22px 10px 26px; }
+  .brand { display: flex; align-items: center; gap: 9px; font-size: 13px; font-weight: 600; letter-spacing: 0.22em; }
+  .brand svg { width: 15px; height: 20px; fill: var(--accent); }
+  .where { color: var(--muted); font-size: 13.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+  .where::before { content: "·"; margin-right: 12px; }
+  .push { margin-left: auto; }
   .btn {
-    padding: 7px 13px; border-radius: 10px; cursor: pointer;
-    background: transparent; border: 1px solid var(--line-soft); font-size: 13.5px;
-    transition: border-color 0.2s, background 0.2s;
+    padding: 7px 15px; border-radius: 999px; background: transparent; border: 1px solid var(--line-soft);
+    font-size: 14px; white-space: nowrap; transition: border-color 0.2s, background 0.2s;
   }
   .btn:hover { border-color: var(--line); background: var(--glass-strong); }
   .btn:disabled { opacity: 0.45; cursor: default; }
   .btn.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); font-weight: 600; }
-  .btn.primary:hover { background: var(--accent); filter: brightness(1.08); }
-  .btn.danger { color: var(--bad); }
+  .btn.primary:hover { filter: brightness(1.08); }
+  .link { background: none; border: 0; padding: 0; color: var(--muted); font-size: 13.5px; text-decoration: underline; text-underline-offset: 3px; justify-self: start; }
+  .link:hover { color: var(--text); }
 
-  /* Main column */
-  .main { display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
-  .top { display: flex; align-items: center; gap: 12px; padding: 14px 22px; border-bottom: 1px solid var(--line-soft); }
-  .top h1 { margin: 0; font-size: 14px; font-weight: 500; letter-spacing: 0.02em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .status { margin-left: auto; display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: 12.5px; white-space: nowrap; }
-  .status i { width: 6px; height: 6px; border-radius: 50%; background: var(--ok); }
-  .busy .status i { background: var(--accent); animation: pulse 1.4s ease-in-out infinite; }
-  .menu { display: none; }
+  /* Options sheet */
+  .options {
+    position: absolute; z-index: 4; top: 62px; right: 18px; width: min(330px, calc(100% - 36px));
+    max-height: calc(100% - 80px); overflow-y: auto;
+    display: grid; gap: 20px; padding: 22px; border-radius: 24px; background: var(--sheet);
+    -webkit-backdrop-filter: blur(22px); backdrop-filter: blur(22px);
+  }
+  .field { display: grid; gap: 9px; }
+  .label { font-size: 13.5px; font-weight: 600; }
+  .hint { color: var(--muted); font-size: 13.5px; line-height: 1.45; }
+  .seg { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; padding: 4px; border-radius: 999px; border: 1px solid var(--line-soft); }
+  .seg button { border: 0; background: none; padding: 6px 4px; border-radius: 999px; font-size: 13.5px; color: var(--muted); }
+  .seg button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); font-weight: 600; }
+  .switch { display: flex; gap: 12px; align-items: flex-start; cursor: pointer; }
+  .switch input { position: absolute; opacity: 0; }
+  .track { flex: none; width: 38px; height: 22px; border-radius: 999px; margin-top: 2px; border: 1px solid var(--line); position: relative; transition: background 0.2s, border-color 0.2s; }
+  .track::after { content: ""; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 50%; background: var(--muted); transition: transform 0.2s, background 0.2s; }
+  .switch input:checked + .track { background: var(--accent); border-color: var(--accent); }
+  .switch input:checked + .track::after { transform: translateX(16px); background: var(--accent-ink); }
+  .switch input:focus-visible + .track { outline: 1.5px solid var(--accent); outline-offset: 2px; }
+  .switch small { display: block; color: var(--muted); font-size: 13.5px; line-height: 1.45; font-weight: 400; }
+  .spend { font-size: 22px; font-weight: 300; font-variant-numeric: tabular-nums; }
+  .adv summary { cursor: pointer; color: var(--muted); font-size: 13.5px; width: fit-content; }
+  .adv > div { display: grid; gap: 14px; padding-top: 14px; }
+  .control { width: 100%; padding: 8px 12px; border-radius: 12px; background: transparent; border: 1px solid var(--line-soft); font-size: 14px; }
+  .tokens { font: 12px/1.6 var(--mono); color: var(--muted); white-space: pre-line; word-break: break-all; }
 
-  .log { flex: 1; overflow-y: auto; padding: 26px 22px 8px; }
-  .thread { max-width: 760px; margin: 0 auto; display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; }
-  .welcome { text-align: center; padding: 12vh 0 3vh; }
-  .welcome h2 { margin: 0 0 14px; font-size: clamp(22px, 3.4vw, 32px); letter-spacing: 0.22em; line-height: 1.2; font-weight: 300; text-wrap: balance; }
-  .welcome p { margin: 0 auto 26px; color: var(--muted); max-width: 44ch; }
-  .chips { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+  /* Conversation */
+  .log { flex: 1; overflow-y: auto; padding: 14px 26px 8px; }
+  .thread { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; }
+  .welcome { padding: 14vh 0 2vh; }
+  .welcome h2 { margin: 0 0 12px; font-size: clamp(28px, 5vw, 42px); font-weight: 300; letter-spacing: -0.01em; line-height: 1.15; text-wrap: balance; }
+  .welcome p { margin: 0 0 26px; color: var(--muted); max-width: 40ch; }
+  .ideas { display: grid; gap: 4px; justify-items: start; }
+  .ideas button { background: none; border: 0; padding: 6px 0; text-align: left; border-bottom: 1px solid var(--line-soft); }
+  .ideas button::after { content: " →"; color: var(--accent); }
+  .ideas button:hover { border-color: var(--accent); }
 
   .msg { white-space: pre-wrap; overflow-wrap: anywhere; }
-  .user { justify-self: end; max-width: 82%; padding: 9px 15px; border-radius: 16px 16px 4px 16px; background: var(--glass-strong); border: 1px solid var(--line-soft); }
-  .answer { padding: 2px 2px; }
-  .answer code, .card code { font: 13px var(--mono); border: 1px solid var(--line-soft); padding: 1px 6px; border-radius: 6px; }
-  pre.code { margin: 8px 0; padding: 12px 14px; border-radius: 12px; background: var(--glass-deep); border: 1px solid var(--line-soft); overflow-x: auto; font: 13px/1.55 var(--mono); white-space: pre; }
-  pre.code code { border: 0; padding: 0; }
-  .think { color: var(--muted); font-size: 13.5px; }
+  .user { justify-self: end; max-width: 84%; padding: 10px 18px; border-radius: 22px 22px 6px 22px; background: var(--glass-strong); border: 1px solid var(--line-soft); }
+  .answer code, .step code { font: 0.86em var(--mono); border: 1px solid var(--line-soft); padding: 1px 6px; border-radius: 6px; }
+  pre.code, pre.raw { margin: 8px 0; padding: 12px 14px; border-radius: 14px; background: var(--glass-deep); border: 1px solid var(--line-soft); overflow-x: auto; font: 13px/1.55 var(--mono); }
+  pre.code { white-space: pre; }
+  pre.raw { white-space: pre-wrap; overflow-wrap: anywhere; max-height: 260px; overflow-y: auto; color: var(--muted); margin: 8px 0 0; }
+  pre.code code { border: 0; padding: 0; font-size: inherit; }
+  .think { color: var(--muted); font-size: 14px; }
   .think summary { cursor: pointer; width: fit-content; }
   .think div { white-space: pre-wrap; padding: 6px 0 0 14px; border-left: 1px solid var(--line-soft); margin-top: 6px; font-style: italic; }
 
-  .card { padding: 11px 14px; border-radius: 14px; border: 1px solid var(--line-soft); display: grid; gap: 9px; }
-  .card.sub { margin-left: 26px; }
-  .head { display: flex; align-items: baseline; gap: 10px; min-width: 0; }
-  .dot { flex: none; width: 6px; height: 6px; border-radius: 50%; background: var(--muted); align-self: center; }
-  .card.running .dot { background: var(--accent); animation: pulse 1.4s ease-in-out infinite; }
-  .card.error .dot, .card.denied .dot { background: var(--bad); }
+  /* What the agent is doing: one plain sentence per action */
+  .step { display: grid; gap: 6px; font-size: 15px; color: var(--muted); }
+  .step.sub { margin-left: 24px; }
+  .step .line { display: flex; gap: 11px; align-items: baseline; }
+  .step b { font-weight: 500; color: var(--text); }
+  .glyph { flex: none; width: 14px; text-align: center; font-size: 12px; }
+  .step.running .glyph::before { content: "●"; color: var(--accent); animation: pulse 1.4s ease-in-out infinite; }
+  .step.done .glyph::before { content: "✓"; }
+  .step.denied .glyph::before { content: "–"; }
+  .step.error .glyph::before { content: "!"; color: var(--bad); font-weight: 700; }
+  .step.error .label { color: var(--bad); }
   @keyframes pulse { 50% { opacity: 0.25; } }
-  .head b { flex: none; font-weight: 500; }
-  .head .what { font: 12.5px var(--mono); color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .head .tag { margin-left: auto; flex: none; font-size: 12px; color: var(--muted); }
-  .card.error .tag, .card.denied .tag { color: var(--bad); }
-  .diff { margin: 0; border-radius: 10px; overflow-x: auto; background: var(--glass-deep); border: 1px solid var(--line-soft); font: 12.5px/1.6 var(--mono); padding: 8px 0; }
-  .diff span { display: block; padding: 0 12px; white-space: pre; }
-  .diff .del { color: var(--bad); }
-  .diff .add { color: var(--ok); }
-  .out summary { cursor: pointer; color: var(--muted); font-size: 12.5px; width: fit-content; }
-  .out pre { margin: 8px 0 0; max-height: 280px; overflow: auto; font: 12.5px/1.55 var(--mono); color: var(--muted); white-space: pre-wrap; overflow-wrap: anywhere; }
-  .ask { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; padding-top: 2px; }
-  .ask span { color: var(--text); font-size: 13.5px; margin-right: 4px; }
+  .step details { margin-left: 25px; }
+  .step summary { cursor: pointer; font-size: 13px; width: fit-content; opacity: 0.8; }
+  .change { margin: 8px 0 0; border-radius: 14px; overflow-x: auto; background: var(--glass-deep); border: 1px solid var(--line-soft); font: 13px/1.6 var(--mono); padding: 8px 0; }
+  .change span { display: block; padding: 0 14px; white-space: pre; }
+  .change .del { color: var(--bad); }
+  .change .add { color: var(--ok); }
 
-  .notice { justify-self: center; font-size: 12.5px; color: var(--muted); padding: 4px 12px; border-radius: 999px; border: 1px solid var(--line-soft); }
+  /* A question that needs the person's answer */
+  .ask { margin: 4px 0 4px 25px; padding: 18px 20px; border-radius: 22px; display: grid; gap: 12px; background: var(--glass-strong); border: 1px solid var(--line); color: var(--text); }
+  .ask h3 { margin: 0; font-size: 17px; font-weight: 500; text-wrap: balance; }
+  .ask .change, .ask pre.raw { margin: 0; color: inherit; }
+  .ask .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+
+  .plan { padding: 2px 0 2px 25px; display: grid; gap: 7px; font-size: 15px; }
+  .plan span { display: flex; gap: 10px; align-items: baseline; }
+  .plan span::before { content: "○"; font-size: 11px; color: var(--muted); }
+  .plan .in_progress::before { content: "●"; color: var(--accent); }
+  .plan .completed { color: var(--muted); }
+  .plan .completed::before { content: "✓"; }
+
+  .notice { justify-self: center; font-size: 13.5px; color: var(--muted); padding: 4px 14px; border-radius: 999px; border: 1px solid var(--line-soft); }
   .notice.warn { color: var(--warn); }
-  .notice.error { color: var(--bad); }
-  .notice.say { justify-self: stretch; border-radius: 12px; white-space: pre-wrap; font: 12.5px/1.6 var(--mono); padding: 12px 14px; }
-  .dots { display: flex; gap: 5px; padding: 6px 2px; }
-  .dots i { width: 5px; height: 5px; border-radius: 50%; background: var(--muted); animation: pulse 1.4s ease-in-out infinite; }
-  .dots i:nth-child(2) { animation-delay: 0.2s; } .dots i:nth-child(3) { animation-delay: 0.4s; }
-  @media (prefers-reduced-motion: reduce) { .dots i, .dot, .status i { animation: none !important; } }
+  .notice.error { color: var(--bad); border-radius: 16px; }
+  .notice.say { justify-self: stretch; border-radius: 16px; white-space: pre-wrap; font: 13px/1.6 var(--mono); padding: 12px 16px; }
+  @media (prefers-reduced-motion: reduce) { .glyph::before { animation: none !important; } }
 
   /* Composer */
-  .composer-wrap { padding: 10px 22px 18px; }
-  .composer { max-width: 760px; margin: 0 auto; display: flex; align-items: flex-end; gap: 10px; padding: 7px 7px 7px 18px; border-radius: 18px; box-shadow: inset 0 1px 0 var(--shine); }
+  .bottom { padding: 6px 22px 22px; display: grid; gap: 8px; }
+  .status { padding-left: 6px; color: var(--muted); font-size: 13.5px; min-height: 1.6em; }
+  .busy .status { color: var(--accent); }
+  .composer { display: flex; align-items: flex-end; gap: 10px; padding: 8px 8px 8px 22px; border-radius: 28px; background: var(--glass-strong); border: 1px solid var(--line); transition: border-color 0.2s; }
   .composer:focus-within { border-color: var(--accent); }
   .composer textarea { flex: 1; resize: none; border: 0; background: none; outline: none; padding: 8px 0; max-height: 180px; line-height: 1.5; }
   .composer textarea::placeholder { color: var(--muted); }
-  .send { width: 38px; height: 38px; border-radius: 12px; border: 1px solid var(--line); cursor: pointer; display: grid; place-items: center; background: transparent; color: var(--text); font-size: 16px; flex: none; transition: background 0.2s, color 0.2s, border-color 0.2s; }
-  .send:hover { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
-  .busy .send { color: var(--bad); }
-  .foot { max-width: 760px; margin: 8px auto 0; text-align: center; color: var(--muted); font-size: 11.5px; }
-  kbd { font: 11px var(--mono); padding: 1px 5px; border-radius: 5px; border: 1px solid var(--line-soft); }
+  .send { min-width: 42px; height: 42px; padding: 0 14px; border-radius: 999px; border: 0; background: var(--accent); color: var(--accent-ink); font-weight: 600; flex: none; }
+  .busy .send { background: transparent; border: 1px solid var(--line); color: var(--text); font-weight: 500; font-size: 14px; }
 
-  @media (max-width: 860px) {
-    .app { grid-template-columns: minmax(0, 1fr); padding: 10px; gap: 10px; }
-    .menu { display: inline-grid; }
-    .side { position: fixed; z-index: 5; inset: 10px 10px 10px 10px; display: none; }
-    .side.open { display: flex; background: color-mix(in srgb, var(--bg) 78%, transparent); -webkit-backdrop-filter: blur(24px); backdrop-filter: blur(24px); }
-    .top { padding: 12px 14px; }
-    .log { padding: 18px 14px 6px; }
-    .composer-wrap { padding: 8px 12px 14px; }
+  @media (max-width: 600px) {
+    .app { padding: 10px; }
+    .lamp { border-radius: 28px; }
+    .top { padding: 14px 14px 8px 18px; }
+    .log { padding: 10px 18px 6px; }
+    .bottom { padding: 6px 12px 14px; }
     .user { max-width: 92%; }
-    .foot { display: none; }
+    .ask { margin-left: 0; }
+    .where { display: none; }
   }
 </style>
 </head>
@@ -222,53 +219,60 @@
 <div class="backdrop" aria-hidden="true"><canvas id="lava"></canvas></div>
 
 <div class="app" id="app">
-  <aside class="side glass" id="side" aria-label="Impostazioni">
-    <div class="brand">
-      <div class="mark" aria-hidden="true">M</div>
-      <div><b>MAK</b><span>VIBE CODING</span></div>
-      <button class="btn menu" id="close" style="margin-left:auto" aria-label="Chiudi impostazioni">✕</button>
-    </div>
-    <div class="field"><span class="label">Progetto</span><span class="path" id="root">…</span></div>
-    <label class="field"><span class="label">Modello</span>
-      <input class="control" id="model" list="models" spellcheck="false" autocomplete="off">
-      <datalist id="models"><option value="claude-opus-5-5"><option value="claude-sonnet-5-5"><option value="claude-haiku-5-5"><option value="claude-fable-5-2"></datalist>
-    </label>
-    <label class="field"><span class="label">Impegno</span>
-      <select class="control" id="effort">
-        <option value="low">Basso · veloce</option><option value="medium">Medio</option><option value="high">Alto</option>
-        <option value="xhigh">Molto alto</option><option value="max">Massimo · lento</option>
-      </select>
-    </label>
-    <label class="switch">
-      <input type="checkbox" id="yolo"><span class="track"></span>
-      <span>Approva tutto da solo<small>Modifiche e comandi partono senza chiederti conferma.</small></span>
-    </label>
-    <div class="field"><span class="label">Attività</span>
-      <ul class="todos" id="todos"></ul><span class="hint" id="notodos">Qui vedrai i passi del lavoro in corso.</span>
-    </div>
-    <div class="spacer"></div>
-    <div class="field"><span class="label">Sessione</span><span class="cost" id="cost"></span></div>
-    <div class="row">
-      <button class="btn" id="new">Nuova conversazione</button>
-      <button class="btn" id="compact" title="Sostituisce la cronologia con un riassunto">Riassumi</button>
-    </div>
-  </aside>
-
-  <main class="main glass">
+  <main class="lamp glass">
     <header class="top">
-      <button class="btn menu" id="open" aria-label="Apri impostazioni">☰</button>
-      <h1 id="title">MAK VIBE CODING</h1>
-      <div class="status" role="status"><i></i><span id="status">Pronto</span></div>
+      <div class="brand">
+        <svg viewBox="0 0 15 20" aria-hidden="true"><path d="M7.5 0C7.5 0 0 8.2 0 12.7 0 16.7 3.4 20 7.5 20S15 16.7 15 12.7C15 8.2 7.5 0 7.5 0Z"/></svg>
+        <span>MAK</span>
+      </div>
+      <span class="where" id="title"></span>
+      <span class="push"></span><!--extra-->
+      <button class="btn" id="open" aria-expanded="false" aria-controls="options">Opzioni</button>
     </header>
+
+    <section class="options glass" id="options" aria-label="Opzioni" hidden>
+      <div class="field">
+        <span class="label">Come preferisci che lavori</span>
+        <div class="seg" id="pace">
+          <button type="button" data-effort="low">Veloce</button>
+          <button type="button" data-effort="high">Equilibrato</button>
+          <button type="button" data-effort="xhigh">Accurato</button>
+        </div>
+        <span class="hint" id="pacehint"></span>
+      </div>
+      <label class="switch">
+        <input type="checkbox" id="yolo"><span class="track"></span>
+        <span class="label">Fai da solo<small>Modifico i file ed eseguo i comandi senza chiederti prima il permesso.</small></span>
+      </label>
+      <div class="field" id="spendbox">
+        <span class="label">Spesa di questa conversazione</span>
+        <span class="spend" id="spend"></span>
+      </div>
+      <button class="btn" id="new" type="button">Ricomincia da capo</button>
+      <details class="adv">
+        <summary>Avanzate</summary>
+        <div>
+          <label class="field"><span class="hint">Modello</span>
+            <input class="control" id="model" list="models" spellcheck="false" autocomplete="off">
+            <datalist id="models"><option value="claude-opus-5-5"><option value="claude-sonnet-5-5"><option value="claude-haiku-5-5"><option value="claude-fable-5-2"></datalist>
+          </label>
+          <div class="field"><span class="hint">Cartella</span><span class="tokens" id="root"></span></div>
+          <div class="field"><span class="hint">Consumo</span><span class="tokens" id="tokens"></span></div>
+          <button class="btn" id="compact" type="button">Riassumi la conversazione</button>
+        </div>
+      </details>
+    </section>
+
     <div class="log" id="log">
       <div class="thread" id="thread" aria-live="polite"></div>
     </div>
-    <div class="composer-wrap">
-      <form class="composer glass" id="form">
-        <textarea id="input" rows="1" placeholder="Chiedi qualcosa sul tuo codice…" aria-label="Messaggio"></textarea>
+
+    <div class="bottom">
+      <div class="status" id="status" role="status"></div>
+      <form class="composer" id="form">
+        <textarea id="input" rows="1" placeholder="Scrivi cosa ti serve…" aria-label="Messaggio"></textarea>
         <button class="send" id="send" aria-label="Invia">↑</button>
       </form>
-      <div class="foot"><kbd>Invio</kbd> invia · <kbd>Maiusc</kbd>+<kbd>Invio</kbd> va a capo · <kbd>/help</kbd> mostra i comandi</div>
     </div>
   </main>
 </div>
@@ -283,30 +287,41 @@
     if (text !== undefined) node.textContent = text;
     return node;
   };
-  const LABELS = {
-    read_file: "Lettura", write_file: "Nuovo file", edit_file: "Modifica", bash: "Comando", glob: "Ricerca file",
-    grep: "Ricerca nel codice", todo_write: "Attività", task: "Sotto-agente", web_search: "Ricerca web", web_fetch: "Pagina web",
+  // Plain-language names for what the agent does: [while it happens, once done].
+  const STEPS = {
+    read_file: ["Leggo", "Ho letto"], write_file: ["Creo", "Ho creato"], edit_file: ["Modifico", "Ho modificato"],
+    bash: ["Eseguo un comando", "Ho eseguito un comando"], glob: ["Cerco tra i file", "Ho cercato tra i file"],
+    grep: ["Cerco nel codice", "Ho cercato nel codice"], task: ["Affido una ricerca a un aiutante", "L'aiutante ha finito"],
+    web_search: ["Cerco sul web", "Ho cercato sul web"], web_fetch: ["Leggo una pagina web", "Ho letto una pagina web"],
   };
+  const ON_FILE = new Set(["read_file", "write_file", "edit_file"]);
+  const QUESTIONS = {
+    write_file: (file) => "Posso creare " + file + "?",
+    edit_file: (file) => "Posso modificare " + file + "?",
+    bash: () => "Posso eseguire questo comando?",
+  };
+  const PACE = { low: "Veloce", medium: "Equilibrato", high: "Equilibrato", xhigh: "Accurato", max: "Accurato" };
+  const PACE_HINT = {
+    Veloce: "Risposte rapide, adatte a richieste semplici.",
+    Equilibrato: "Un buon compromesso per quasi tutto.",
+    Accurato: "Ci metto di più e controllo meglio. Costa un po' di più.",
+  };
+
   const thread = $("thread"), log = $("log"), input = $("input"), app = $("app");
-  const cards = new Map();
-  let busy = false, answer = null, think = null, waiting = null;
+  const steps = new Map();
+  let busy = false, answer = null, think = null, plan = null, asking = 0, lamp = () => {};
 
   const post = (path, body) =>
     fetch(path, { method: "POST", headers: { "content-type": "application/json", "x-mak-token": TOKEN }, body: JSON.stringify(body || {}) });
   const send = async (text, silent) => {
     const res = await post("/api/input", { text, silent: !!silent });
-    if (res.status === 409) note("warn", "Aspetta la fine della risposta, oppure fermala.");
+    if (res.status === 409) note("warn", "Sto ancora lavorando: aspetta che finisca oppure premi Ferma.");
     return res.ok;
   };
 
   const nearBottom = () => log.scrollHeight - log.scrollTop - log.clientHeight < 140;
-  const add = (node) => {
-    const stick = nearBottom();
-    if (waiting) thread.insertBefore(node, waiting); else thread.append(node);
-    if (stick) log.scrollTop = log.scrollHeight;
-    return node;
-  };
-  const follow = (fn) => { const stick = nearBottom(); fn(); if (stick) log.scrollTop = log.scrollHeight; };
+  const follow = (fn) => { const stick = nearBottom(); const out = fn(); if (stick) log.scrollTop = log.scrollHeight; return out; };
+  const add = (node) => follow(() => (thread.append(node), node));
   const note = (level, text) => add(el("div", "notice " + level, text));
 
   // Minimal Markdown: fenced code, inline code and bold. Everything is escaped first.
@@ -317,120 +332,126 @@
     return parts.map((part, i) => {
       // Blank lines next to a code block would double its margins.
       if (i % 2 === 0) return inline(part.replace(i ? /^\n+/ : /^$/, "").replace(i < parts.length - 1 ? /\n+$/ : /^$/, ""));
-      const body = part.replace(/^[^\n]*\n?/, "");
-      return '<pre class="code"><code>' + esc(body.replace(/\n$/, "")) + "</code></pre>";
+      return '<pre class="code"><code>' + esc(part.replace(/^[^\n]*\n?/, "").replace(/\n$/, "")) + "</code></pre>";
     }).join("");
   };
 
   function welcome() {
     const box = el("div", "welcome");
-    box.append(el("h2", "", "MAK VIBE CODING"), el("p", "", "Descrivi cosa vuoi ottenere: leggo il codice, propongo le modifiche e le eseguo solo con il tuo via libera."));
-    const chips = el("div", "chips");
-    for (const text of ["Spiegami questo progetto", "Trova e correggi un bug", "Scrivi i test che mancano"]) {
-      const chip = el("button", "btn", text);
-      chip.type = "button";
-      chip.addEventListener("click", () => { input.value = text; grow(); input.focus(); });
-      chips.append(chip);
+    box.append(el("h2", "", "Ciao. Cosa facciamo oggi?"), el("p", "", "Dimmelo con parole tue. Prima di cambiare qualcosa ti chiedo sempre il permesso."));
+    const ideas = el("div", "ideas");
+    for (const text of ["Spiegami cosa fa questo progetto", "C'è un errore, aiutami a trovarlo", "Aggiungi una nuova funzione"]) {
+      const b = el("button", "", text);
+      b.type = "button";
+      b.addEventListener("click", () => { input.value = text; grow(); input.focus(); });
+      ideas.append(b);
     }
-    box.append(chips);
+    box.append(ideas);
     thread.append(box);
   }
   const clearWelcome = () => thread.querySelector(".welcome")?.remove();
 
-  function renderTodos(todos) {
-    const list = $("todos");
-    list.replaceChildren();
-    for (const t of todos) {
-      const li = el("li", t.status);
-      li.append(el("span", "box", t.status === "completed" ? "✓" : ""), el("span", "", t.content));
-      list.append(li);
+  function showStatus() {
+    $("status").textContent = asking ? "Aspetto la tua risposta qui sopra." : busy ? "Sto lavorando…" : "";
+    lamp(asking ? 0.05 : busy ? 1 : 0.3);
+  }
+
+  function changeBlock(detail) {
+    const block = el("pre", "change");
+    for (const line of detail.split("\n")) {
+      const text = line.replace(/^ {4}/, "");
+      const gone = text.startsWith("-");
+      block.append(el("span", gone ? "del" : "add", (gone ? "− " : "+ ") + text.replace(/^[-+] {0,3}/, "")));
     }
-    $("notodos").hidden = todos.length > 0;
+    return block;
+  }
+
+  function label(step, done) {
+    const words = STEPS[step.name] || [step.name, step.name];
+    const node = step.node.querySelector(".label");
+    node.replaceChildren(document.createTextNode(words[done ? 1 : 0]));
+    if (ON_FILE.has(step.name)) node.append(" ", el("b", "", step.target));
+    else if (step.name === "web_search") node.append(": ", el("b", "", step.target));
   }
 
   function toolStart(e) {
     answer = think = null;
-    const card = el("div", "card running" + (e.sub ? " sub" : ""));
-    const head = el("div", "head");
-    const what = el("span", "what", e.summary);
-    what.title = e.summary;
-    head.append(el("span", "dot"), el("b", "", LABELS[e.name] || e.name), what, el("span", "tag", "in corso"));
-    card.append(head);
-    if (e.detail) {
-      const diff = el("pre", "diff");
-      for (const line of e.detail.split("\n")) {
-        const text = line.replace(/^ {4}/, "");
-        diff.append(el("span", text.startsWith("-") ? "del" : "add", text));
-      }
-      card.append(diff);
-    }
     if (e.todos) {
-      renderTodos(e.todos);
-      const list = el("ul", "todos");
-      for (const t of e.todos) {
-        const li = el("li", t.status);
-        li.append(el("span", "box", t.status === "completed" ? "✓" : ""), el("span", "", t.content));
-        list.append(li);
-      }
-      card.append(list);
+      if (!plan || !plan.isConnected) plan = add(el("div", "plan"));
+      follow(() => plan.replaceChildren(...e.todos.map((t) => el("span", t.status, t.content))));
+      return;
     }
-    cards.set(e.id, card);
-    add(card);
+    const node = el("div", "step running" + (e.sub ? " sub" : ""));
+    const line = el("div", "line");
+    line.append(el("span", "glyph"), el("span", "label"));
+    node.append(line);
+    const step = { node, name: e.name, target: e.summary.replace(/ \(\d+ righe\)$/, ""), summary: e.summary, detail: e.detail };
+    steps.set(e.id, step);
+    label(step, false);
+    add(node);
   }
 
   function toolEnd(e) {
-    const card = cards.get(e.id);
-    if (!card) return;
+    const step = steps.get(e.id);
+    if (!step) return;
     follow(() => {
-      card.classList.remove("running");
-      card.querySelector(".ask")?.remove();
-      const tag = card.querySelector(".tag");
-      if (e.status === "denied") { card.classList.add("denied"); tag.textContent = "negato"; return; }
-      if (e.status === "error") card.classList.add("error");
-      tag.textContent = e.status === "error" ? "errore" : "fatto";
-      // A change already shows its diff; only failures need the raw result too.
-      if (e.server || card.querySelector(".todos") || !e.output.trim()) return;
-      if (card.querySelector(".diff") && e.status === "ok") return;
-      const lines = e.output.trimEnd().split("\n");
-      const out = el("details", "out");
-      out.open = e.status === "error" || lines.length <= 4;
-      out.append(el("summary", "", lines.length === 1 ? "Risultato" : "Risultato · " + lines.length + " righe"), el("pre", "", e.output.trimEnd()));
-      card.append(out);
+      const { node } = step;
+      if (node.querySelector(".ask")) { node.querySelector(".ask").remove(); asking = Math.max(0, asking - 1); showStatus(); }
+      node.classList.remove("running");
+      if (e.status === "denied") {
+        node.classList.add("denied");
+        node.querySelector(".label").textContent = "Non l'ho fatto, come hai chiesto.";
+        return;
+      }
+      node.classList.add(e.status === "error" ? "error" : "done");
+      if (e.status === "error") node.querySelector(".label").textContent = "Non ci sono riuscito: " + (e.output.split("\n")[0] || "errore");
+      else label(step, true);
+      if (e.server) return;
+      const more = el("details");
+      more.append(el("summary", "", "Dettagli"));
+      if (step.name === "bash") more.append(el("pre", "raw", step.summary));
+      if (step.detail) more.append(changeBlock(step.detail));
+      if (e.output.trim() && !(step.detail && e.status === "ok")) more.append(el("pre", "raw", e.output.trimEnd()));
+      if (more.children.length > 1) node.append(more);
     });
   }
 
   function approval(e) {
-    const card = cards.get(e.id);
-    if (!card || card.querySelector(".ask")) return;
-    const bar = el("div", "ask");
-    bar.append(el("span", "", "Posso procedere?"));
-    for (const [value, text, cls] of [["yes", "Consenti", "btn primary"], ["always", "Consenti sempre", "btn"], ["no", "Nega", "btn danger"]]) {
-      const b = el("button", cls, text);
-      b.type = "button";
-      b.addEventListener("click", () => { bar.querySelectorAll("button").forEach((x) => (x.disabled = true)); post("/api/approve", { id: e.id, answer: value }); });
-      bar.append(b);
-    }
-    follow(() => { card.querySelector(".tag").textContent = "in attesa"; card.append(bar); });
-    bar.querySelector("button").focus({ preventScroll: true });
+    const step = steps.get(e.id);
+    if (!step || step.node.querySelector(".ask")) return;
+    const box = el("div", "ask");
+    box.append(el("h3", "", (QUESTIONS[step.name] || (() => "Posso procedere?"))(step.target)));
+    if (step.detail) box.append(changeBlock(step.detail));
+    else if (step.name === "bash") box.append(el("pre", "raw", step.summary));
+    const row = el("div", "row");
+    const choose = (value) => () => { box.querySelectorAll("button").forEach((b) => (b.disabled = true)); post("/api/approve", { id: e.id, answer: value }); };
+    const yes = el("button", "btn primary", "Sì, procedi"), no = el("button", "btn", "No");
+    const always = el("button", "link", "Sì, e non chiedermelo più per azioni così");
+    for (const [b, v] of [[yes, "yes"], [no, "no"], [always, "always"]]) { b.type = "button"; b.addEventListener("click", choose(v)); }
+    row.append(yes, no);
+    box.append(row, always);
+    asking++;
+    follow(() => step.node.append(box));
+    showStatus();
+    yes.focus({ preventScroll: true });
   }
 
   function setBusy(value) {
     busy = value;
+    if (!busy) asking = 0;
     app.classList.toggle("busy", busy);
-    $("status").textContent = busy ? "Al lavoro…" : "Pronto";
-    $("send").textContent = busy ? "■" : "↑";
+    $("send").textContent = busy ? "Ferma" : "↑";
     $("send").setAttribute("aria-label", busy ? "Ferma" : "Invia");
-    if (busy && !waiting) { waiting = el("div", "dots"); waiting.append(el("i"), el("i"), el("i")); thread.append(waiting); log.scrollTop = log.scrollHeight; }
-    if (!busy && waiting) { waiting.remove(); waiting = null; }
+    showStatus();
   }
 
   const handlers = {
-    reset() { thread.replaceChildren(); cards.clear(); answer = think = waiting = null; renderTodos([]); welcome(); },
-    user(e) { clearWelcome(); answer = think = null; add(el("div", "msg user", e.text)); log.scrollTop = log.scrollHeight; },
+    reset() { thread.replaceChildren(); steps.clear(); answer = think = plan = null; asking = 0; welcome(); },
+    user(e) { clearWelcome(); answer = think = plan = null; add(el("div", "msg user", e.text)); log.scrollTop = log.scrollHeight; },
     thinking(e) {
       if (!think) {
         const box = el("details", "think");
-        box.append(el("summary", "", "Ragionamento"), (think = el("div", "")));
+        box.append(el("summary", "", "Ci sto ragionando"), (think = el("div", "")));
         add(box); answer = null;
       }
       follow(() => (think.textContent += e.delta));
@@ -447,19 +468,24 @@
     approval_done() {},
     notice(e) { clearWelcome(); answer = think = null; note(e.level, e.text.trim()); },
     state(e) {
+      $("title").textContent = e.root.split(/[\\/]/).filter(Boolean).pop() || "";
       $("root").textContent = e.root;
-      $("title").textContent = e.root.split(/[\\/]/).filter(Boolean).pop() || e.name;
       if (document.activeElement !== $("model")) $("model").value = e.model;
-      $("effort").value = e.effort;
+      const pace = PACE[e.effort] || "Equilibrato";
+      for (const b of $("pace").children) b.setAttribute("aria-pressed", String(b.textContent === pace));
+      $("pacehint").textContent = PACE_HINT[pace];
       $("yolo").checked = e.yolo;
-      $("cost").textContent = e.cost.replace(/ · /g, "\n").replace("Token: ", "");
+      const price = e.cost.match(/\$([\d.]+)/);
+      $("spendbox").hidden = !price;
+      if (price) $("spend").textContent = Number(price[1]).toLocaleString("it-IT", { style: "currency", currency: "USD", minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      $("tokens").textContent = e.cost.split("\n")[0].replace("Token: ", "").replace(/ · /g, "\n");
       setBusy(e.busy);
     },
   };
 
   const source = new EventSource("/events?t=" + TOKEN);
   source.onmessage = (m) => { const e = JSON.parse(m.data); handlers[e.type]?.(e); };
-  source.onerror = () => { $("status").textContent = "Disconnesso"; };
+  source.onerror = () => { $("status").textContent = "Collegamento perso: controlla che MAK sia ancora aperto nel terminale."; };
 
   const grow = () => { input.style.height = "auto"; input.style.height = Math.min(input.scrollHeight, 180) + "px"; };
   input.addEventListener("input", grow);
@@ -474,16 +500,20 @@
     input.value = ""; grow();
     if (!(await send(text))) { input.value = text; grow(); }
   });
+
+  const options = $("options");
+  const toggleOptions = (show) => { options.hidden = !show; $("open").setAttribute("aria-expanded", String(show)); };
+  $("open").addEventListener("click", (e) => { e.stopPropagation(); toggleOptions(options.hidden); });
+  document.addEventListener("click", (e) => { if (!options.hidden && !options.contains(e.target)) toggleOptions(false); });
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape" && !options.hidden) { toggleOptions(false); $("open").focus(); } });
+  $("pace").addEventListener("click", (e) => e.target.dataset.effort && send("/effort " + e.target.dataset.effort, true));
   $("model").addEventListener("change", (e) => e.target.value.trim() && send("/model " + e.target.value.trim(), true));
-  $("effort").addEventListener("change", (e) => send("/effort " + e.target.value, true));
   $("yolo").addEventListener("change", (e) => send("/yolo " + (e.target.checked ? "on" : "off"), true));
-  $("new").addEventListener("click", () => send("/clear", true));
-  $("compact").addEventListener("click", () => send("/compact", true));
-  $("open").addEventListener("click", () => $("side").classList.add("open"));
-  $("close").addEventListener("click", () => $("side").classList.remove("open"));
+  $("new").addEventListener("click", () => { toggleOptions(false); send("/clear", true); });
+  $("compact").addEventListener("click", () => { toggleOptions(false); send("/compact", true); });
 
   // Lava lamp: a metaball field on a small canvas. Wax rises warm from the pool at the
-  // bottom, cools as it climbs, and sinks back. Colours come from the theme tokens.
+  // bottom, cools as it climbs, and sinks back. How fast it moves follows the agent.
   (() => {
     const canvas = $("lava"), ctx = canvas.getContext("2d");
     const still = matchMedia("(prefers-reduced-motion: reduce)");
@@ -492,7 +522,8 @@
       x: (i + 0.5) / 9 + rand(-0.04, 0.04), r: rand(0.075, 0.13), period: rand(70, 150), phase: Math.random(), sway: rand(0, 6.28),
     }));
     const pools = [[0.1, 1.12, 0.2], [0.36, 1.16, 0.24], [0.62, 1.13, 0.22], [0.88, 1.15, 0.23], [0.28, -0.14, 0.17], [0.72, -0.16, 0.19]];
-    let w = 0, h = 0, image = null, hot = [0, 0, 0], cool = [0, 0, 0], last = 0;
+    let w = 0, h = 0, image = null, hot = [0, 0, 0], cool = [0, 0, 0], last = 0, clock = Math.random() * 500, heat = 0.3, target = 0.3;
+    lamp = (value) => { target = value; canvas.style.opacity = `calc(var(--lava-opacity) * ${(0.85 + 0.45 * value).toFixed(2)})`; };
 
     const readTheme = () => {
       const css = getComputedStyle(document.documentElement);
@@ -530,10 +561,17 @@
       ctx.putImageData(image, 0, 0);
     };
     const frame = (now) => {
-      if (!document.hidden && now - last > 40) { last = now; draw(now / 1000); }
+      const dt = Math.min(0.1, (now - last) / 1000);
+      if (document.hidden) last = now;
+      else if (dt >= 0.04) {
+        last = now;
+        heat += (target - heat) * Math.min(1, dt * 0.8); // warms up and cools down gradually
+        clock += dt * (0.4 + 5 * heat);
+        draw(clock);
+      }
       if (!still.matches) requestAnimationFrame(frame);
     };
-    const restart = () => { readTheme(); resize(); draw(performance.now() / 1000); };
+    const restart = () => { readTheme(); resize(); draw(clock); };
     addEventListener("resize", restart);
     matchMedia("(prefers-color-scheme: dark)").addEventListener("change", restart);
     new MutationObserver(restart).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
